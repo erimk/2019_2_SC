@@ -1,0 +1,197 @@
+---
+title: "EP1: Sistema de Atendimento com Clientes Impacientes"
+author: "Erica Mayumi Kanashiro nUSP: 9761698, Eder Gabriel da Trindade Félix nUSP:9778515 "
+date: "10/6/2019"
+output: html_document
+---
+  
+  ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Subproblema 1
+Programa para simular um sistema de atendimento com clientes impaciantes. Descrição<http://www.each.usp.br/lauretto/ACH2138_2019>.
+
+
+Considerando o cenário \( \ T =50, n=5,\lambda=3, \mu = 0.5\) a implementação incrementa N em passos de 100 (começando com N = 100) e para quando a amplitude do intervalo de 95% de confiança para W for menor do que 0.005 (ou seja, | LimiteSuperior − LimiteInferior | = 2 × 1.96 × se W < 0 .005), onde se W = sd (W) / √ N é erro padrão de W.
+
+O exercício propõe a simular um atendimento de guichê com uma fila de espera, onde clientes impacientes permanecem ou saem da filas. Gerando a cada iteração de N=20000 um valores para:
+(a)n=5,lambda=3, mi=0.5
+(b)n=4,=3, =0.5
+Para o funcionamento do ep, que simula o atendimento de guiches com clientes impacientes que podem desistir de esperar na fila, dependendo do tamanho da fila de espera, que cresce quando os guiches estão ocupados e mais clientes chegam. As seguintes variáveis foram utilizadas. Diversos trechos seguem a orientação dada pelo enunciado e materiais fornecidos pelo professor. As seguintes variáveis foram utilizadas.
+
+  
+
+
+  ```{r ep}
+  
+InterTempo<-50 # Intervalo de tempo total sobre o qual se deseja calcular as médias de aceitações e rejeições.Representando a variável T.
+N<-20000 #Numero de repetições da simulação
+n<-4 # número de linhas ou guiches 
+lambda<-3 # modela a taxa de entrada de clientes (λ), parâmetro da distribuição exponencial 
+mi<-0.5 #taxa de atendimentos a clientes por cada guichê (th: tempo de atendimento de cada linha)
+
+```
+##### vetores guardando resultados
+  ```{r vetores}
+TM<-rep(0,N) # Tempo de Espera
+R<-rep(0,N) # tamanho da fila
+X<-rep(0,N) # Requisições atendidas
+Y<-rep(0,N) # Requisições rejeitadas
+W<-rep(0,N) #Proportção Requisições Rejeitadas
+```
+
+##### Média dos resultados
+  ```{r medias}
+mediaX<-0
+mediaY<-0
+mediaW<-0
+mediaTM<-0
+mediaR<-0
+```
+
+##### Média dos resultados
+  ```{r repeticoes}
+#Calculando todas as N repetições
+for(i in 1:N){
+  Tr<-0 #instante de chegada do último cliente até o momento, Inicialmente tr<-0
+  k<-0 # k: contador de clientes que entraram na fila até o momento;
+  ctcheg<-c(0,(N/10))#vetor de tamanho variável em que ctcheg[k]>0 denota o instante em que o k-ésimo cliente chegou
+  x<-0 #contador de clientes já atendidos; inicialmente, x=0
+  y<-0 #contador de clientes que forma embora sem entrar na fila; inicialmente y = 0
+  r<-0 #comprimento atual da fila; inicialmente, r=0
+  w<-0 # proporção de clientes que foram embora:  w=y/(x+y+r)
+  tm<-0 #tempo máximo de permanência dentre todos os clientes atendidos até o momento
+  guiche<-rep(0,n) # Iniciando os guiches disponíveis
+  
+  
+  
+  
+  
+  
+  #Calculando as variações em T
+  while(Tr<= InterTempo){
+    z<-rexp(1, lambda) # Variância de atendimento com poisson
+    Tr<-Tr+z #Tempo do cliente mais a variavel aleatoria de tempo gerada
+    k<-k+1 #cliente entra na fila
+    if (k>length(ctcheg)) {
+      ctcheg = c(ctcheg, rep(0,1))
+    }
+    ctcheg[k] <- Tr #
+    
+    while (min(guiche)<=Tr & x<k) {
+      #enquanto houver mais clientes chegando que atendidos
+      # e enquanto houver um guiche com menos tempo requerido que o tempo de chegada
+      guicheAtendente = which.min(guiche)
+      taxaAtend = rexp(1, mi)
+      x = x+1
+      guiche[guicheAtendente] = max(c(guiche[guicheAtendente],ctcheg[x])) + taxaAtend # descrito enunciado
+      tm = max(c(tm, guiche[guicheAtendente]-ctcheg[x])) # descrito enunciado do ep
+    }
+    
+    # Comprimento atual da fila (precisa descontar o cliente que acabou de chegar)
+    r = max(c(0, (k-1)-x))
+      #não achou guiche
+      # Comprimento atual da fila (precisa descontar o cliente que acabou de chegar)
+      r<-max(c(0, (k-1)-x))  #atribuindo r = max{0, (k − 1) − x} // não considera o último cliente
+      #Gerando atributo para verificar se o cliente irá embora
+      pr<-r/(r+n)
+      s<-rbinom(1,1,pr) #s ∼ Ber (pr) onde pr = r /(r + n)
+      if (s==1) {
+        k<-k-1 #Se s = 1, atribua k = k − 1; y = y + 1
+        y<-y+1
+      }
+      r<-k-x
+    
+  }  
+  R[i] <-r
+  TM[i]<-tm
+  X[i] <-x
+  Y[i] <-y
+  W[i] <-y/(x+y+r)
+    
+}
+#guardando as médias
+mediaX<-mean(X)
+mediaY<-mean(Y)
+mediaW<-mean(W)
+mediaR<-mean(R)
+mediaTM<-mean(TM)
+
+#Calcular a média parcial para cada k
+centos<-N/100 # quantos blocos de 100 iterações
+mparcialW<-rep(0,centos) # array com media amostral de 100 iterações não atendidos
+mparcialAtend<-rep(0,centos) # array com media amostral de 100 iterações atendidos
+mIntConf<-rep(0,centos) # array com media amostral de 100 iterações atendidos
+mTM<-rep(0,centos)
+sW <- 0 #desvio padrao
+sTM <- 0 #desvio padrao tempo máximo
+K<-rep(0,centos) # array com media amostral de 100 iterações
+LIw<-rep(0,centos)
+LSw<-rep(0,centos)
+LItm<-rep(0,centos)
+LStm<-rep(0,centos)
+errorTM <-0
+totalsw<-rep(0,centos)
+
+for(j in 1:centos){
+  K[j]<-j*100
+  sW<-sd(W[1: K[j] ])
+  totalsw[j]<-sW
+  mparcialW[j]<-sum(W[1: K[j]])/ K[j]
+  mparcialAtend[j]<-sum(TM[1: K[j]])/ K[j]
+  #error <- qnorm(0.975)*sW/sqrt(K[j])
+  error <- qt(0.975,df=K[j]-1)*sW/sqrt(K[j])
+  mIntConf[j]<-error
+  LIw[j]<-mparcialW[j]-error
+  LSw[j]<-mparcialW[j]+error
+  
+  sTM<-sd(TM[1: K[j] ])
+  mTM[j]<-sum(TM[1: K[j]])/ K[j]
+  errorTM <-  qt(0.975,df=K[j]-1)*sTM/sqrt(K[j])
+  LItm[j]<-mTM[j]-errorTM
+  LStm[j]<-mTM[j]+errorTM
+}
+
+plot(totalsw)
+#imprimir o histograma de W
+#plot(K, mparcialW, type='l', xlab='k', ylab='E(W)', main='', ylim=c(min(mparcialW), max(mparcialW)))
+plot(K, mparcialW, type='l', xlab='k', ylab='E(W)', main='', ylim=c(min(mparcialW), max(mparcialW)))
+lines(K,LIw, col="red", type = "l",lty=2)
+lines(K,LSw, col="red", type = "l",lty=2)
+
+plot(K, mIntConf, type='l', xlab='N', ylab='', main='amplitude do intervalo de 95% de confiança para W', ylim=c(min(mIntConf), max(mIntConf)))
+
+plot(K, mTM, type='l', xlab='N', ylab='', main='Tempo de espera Máximo', ylim=c(min(mTM), max(mTM)))
+lines(K,LItm, col="red", type = "l",lty=2)
+lines(K,LStm, col="red", type = "l",lty=2)
+
+#imprimir o histograma de W
+hist(W,main='Histograma de μW(k)',90)
+plot(K, mparcialW, type='l', xlab='k', ylab='E(W)', main='', ylim=c(min(mparcialW), max(mparcialW)))
+plot(K, mparcialAtend, type='l', xlab='k', ylab='E(Tm)', main='', ylim=c(min(mparcialAtend), max(mparcialAtend)))
+
+hist(X,150) #ilustra a frequencia de clientes atendidos até o instante T
+hist(Y,150) #ilustra a frequencia de clientes que foram embora até o instante T
+hist(W,150) #ilustra a frequencia da proporção de clientes que foram embora até o instante T
+hist(R, main='Tamanho da fila até o instante T') #ilustra a frequencia de do tamnho da fila até o instante T
+hist(TM,150, main='tempo maximo de permanencia') #ilustra a frequencia do tempo maximo de permanencia dentre clientes atendidos até o instante T
+
+
+#Calculando a probabilidade de μW > 10
+r10<-length(W[W > 0.10])/length(W)
+
+#Calculando a probabilidade de TM > 13
+pacientes <- sum(TM>13)
+total <-sum(X)+sum(Y)
+pp <-pacientes/total
+pp <-pacientes/sum(X)
+#5
+print(pp)
+ws <- sum(W>mediaW+error) + sum(W<mediaW-error) 
+wsr <-ws/total
+#6
+print(wsr)
+
+```
+
