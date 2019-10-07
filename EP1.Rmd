@@ -1,8 +1,13 @@
 ---
-title: "EP1: Sistema de Atendimento com Clientes Impacientes"
-author: "Erica Mayumi Kanashiro nUSP: 9761698, Eder Gabriel da Trindade Félix nUSP:9778515 "
+title: 'EP1: Sistema de Atendimento com Clientes Impacientes'
+author: 'Erica Mayumi Kanashiro nUSP: 9761698, Eder Gabriel da Trindade Félix nUSP:9778515 '
 date: "10/6/2019"
-output: html_document
+output:
+  pdf_document:
+    latex_engine: xelatex
+    fig_crop: false
+
+  html_document: default
 ---
   
   ```{r setup, include=FALSE}
